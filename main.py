@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from aiogram import Bot, Dispatcher, types, executor
 from environs import Env
 
+from run import detect_intent_texts
+
 logger = logging.getLogger(__file__)
 logging.basicConfig(level=logging.INFO, format='level=%(levelname)s time="%(asctime)s" message="%(message)s"')
 
@@ -20,6 +22,7 @@ def main():
     env = Env()
     env.read_env()
     BOT_TOKEN = env.str('TELEGRAM_TOKEN')
+    project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
     bot = Bot(BOT_TOKEN, parse_mode=types.ParseMode.HTML)
     dp = Dispatcher(bot)
 
@@ -43,7 +46,8 @@ def main():
     @dp.message_handler()
     async def echo(message: types.Message):
         logger.info(f'Received message from user {message.from_user.id}')
-        await message.answer(message.text)
+        answer = detect_intent_texts(project_id, message.from_user.id, list(message.text))
+        await message.answer(answer)
 
     executor.start_polling(dp, skip_updates=True, on_startup=set_default_commands)
 
