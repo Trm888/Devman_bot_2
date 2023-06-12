@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from aiogram import Bot, Dispatcher, types, executor
 from environs import Env
 
-from run import detect_intent_texts
+from dialogflow_func import detect_intent_texts
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(level=logging.INFO, format='level=%(levelname)s time="%(asctime)s" message="%(message)s"')
@@ -40,13 +40,13 @@ def main():
 
     @dp.errors_handler()
     async def errors_handler(update: types.Update, exception: Exception):
-        await update.message.reply("Произошла ошибка. Пожалуйста, попробуйте еще раз позже.")
+        # await update.message.reply("Произошла ошибка. Пожалуйста, попробуйте еще раз позже.")
         logger.exception(f'Ошибка при обработке запроса {exception}')
 
     @dp.message_handler()
     async def echo(message: types.Message):
         logger.info(f'Received message from user {message.from_user.id}')
-        answer = detect_intent_texts(project_id, message.from_user.id, list(message.text))
+        answer = detect_intent_texts(project_id, message.from_user.id, [(message.text)])
         await message.answer(answer)
 
     executor.start_polling(dp, skip_updates=True, on_startup=set_default_commands)

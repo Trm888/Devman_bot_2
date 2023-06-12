@@ -4,17 +4,6 @@ import os
 from environs import Env
 
 
-def delete_intent(project_id, intent_id):
-    """Delete intent with the given intent type and intent value."""
-    from google.cloud import dialogflow
-
-    intents_client = dialogflow.IntentsClient()
-
-    intent_path = intents_client.intent_path(project_id, intent_id)
-
-    intents_client.delete_intent(request={"name": intent_path})
-
-
 def create_intent(project_id, display_name, training_phrases_parts, message_texts):
     """Create an intent of the given intent type."""
     from google.cloud import dialogflow
@@ -36,9 +25,8 @@ def create_intent(project_id, display_name, training_phrases_parts, message_text
     )
 
     return intents_client.create_intent(
-        request={"parent": parent, "intent": intent}
+        request={"parent": parent, "intent": intent, "language_code": "ru"}
     )
-
 
 
 if __name__ == '__main__':
@@ -53,4 +41,3 @@ if __name__ == '__main__':
         answer = [job_intent['answer']]
 
     create_intent(project_id, 'getting-job', questions, answer)
-
