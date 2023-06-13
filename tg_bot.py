@@ -1,30 +1,50 @@
+import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 
 from aiogram import Bot, Dispatcher, types, executor
 from environs import Env
 
-from dialogflow_func import detect_intent_texts
+from dialogflow_func import detect_intent
 
 logger = logging.getLogger(__file__)
-logging.basicConfig(level=logging.INFO, format='level=%(levelname)s time="%(asctime)s" message="%(message)s"')
+logging.basicConfig(level=logging.ERROR, format='level=%(levelname)s time="%(asctime)s" message="%(message)s"')
+
+
+class TelegramLogsHandler(logging.Handler):
+    def __init__(self, bot: Bot, chat_id: int):
+        super().__init__()
+        self.bot = bot
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        asyncio.create_task(self.send_log_message(log_entry))
+
+    async def send_log_message(self, log_entry):
+        await self.bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
 def main():
+    env = Env()
+    env.read_env()
+    bot_token = env.str('TELEGRAM_BOT_TOKEN')
+    project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
+    bot = Bot(bot_token, parse_mode=types.ParseMode.HTML)
+    dp = Dispatcher(bot)
+    chat_id = env.int('ADMIN_CHAT_ID')
+
     logger.info('Бот запущен')
-    file_handler = RotatingFileHandler('bot.log', maxBytes=100000, backupCount=3)
+    file_handler = RotatingFileHandler('tg_bot.log', maxBytes=100000, backupCount=3)
     file_handler.setFormatter(logging.Formatter('%(message)s'))
     logger.addHandler(file_handler)
 
+    telegram_handler = TelegramLogsHandler(bot, chat_id)
+    telegram_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
+    logger.addHandler(telegram_handler)
+
     stream_handler = logging.StreamHandler()
     logger.addHandler(stream_handler)
-
-    env = Env()
-    env.read_env()
-    BOT_TOKEN = env.str('TELEGRAM_TOKEN')
-    project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
-    bot = Bot(BOT_TOKEN, parse_mode=types.ParseMode.HTML)
-    dp = Dispatcher(bot)
 
     async def set_default_commands(dp):
         await dp.bot.set_my_commands(
@@ -35,19 +55,16 @@ def main():
 
     @dp.message_handler(commands=['start'])
     async def start(message: types.Message):
-        logger.info(f'Received start command from user {message.from_user.id}')
         await message.answer('Здравствуйте!')
 
     @dp.errors_handler()
     async def errors_handler(update: types.Update, exception: Exception):
-        # await update.message.reply("Произошла ошибка. Пожалуйста, попробуйте еще раз позже.")
-        logger.exception(f'Ошибка при обработке запроса {exception}')
+        logger.exception(f'Ошибка из телеграмм бота: {exception}')
 
     @dp.message_handler()
     async def echo(message: types.Message):
-        logger.info(f'Received message from user {message.from_user.id}')
-        answer = detect_intent_texts(project_id, message.from_user.id, [(message.text)])
-        await message.answer(answer)
+        answer = detect_intent(project_id, message.from_user.id, [(message.text)])
+        await message.answer(answer.fulfillment_text)
 
     executor.start_polling(dp, skip_updates=True, on_startup=set_default_commands)
 
