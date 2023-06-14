@@ -1,4 +1,5 @@
 import logging
+import pathlib
 from logging.handlers import RotatingFileHandler
 
 from environs import Env
@@ -33,7 +34,9 @@ def main():
     updater = Updater(bot_token, use_context=True)
     logger.setLevel(logging.DEBUG)
 
-    file_handler = RotatingFileHandler('tg_bot.log', maxBytes=100000, backupCount=3)
+    file_handler = RotatingFileHandler(pathlib.PurePath.joinpath(pathlib.Path.cwd(), 'tg_bot.log'),
+                                       maxBytes=100000,
+                                       backupCount=3)
     file_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(file_handler)
 

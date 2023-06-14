@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import random
 from logging.handlers import RotatingFileHandler
 
@@ -42,7 +43,9 @@ def main():
 
     logger.setLevel(logging.DEBUG)
 
-    file_handler = RotatingFileHandler('vk_bot.log', maxBytes=100000, backupCount=3)
+    file_handler = RotatingFileHandler(pathlib.PurePath.joinpath(pathlib.Path.cwd(), 'tg_bot.log'),
+                                       maxBytes=100000,
+                                       backupCount=3)
     file_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(file_handler)
 
