@@ -1,28 +1,30 @@
-import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 
-from aiogram import Bot, Dispatcher, types, executor
+import telegram
 from environs import Env
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 from dialogflow_func import detect_intent
 
-logger = logging.getLogger(__file__)
-logging.basicConfig(level=logging.ERROR, format='level=%(levelname)s time="%(asctime)s" message="%(message)s"')
+logger = logging.getLogger(__name__)
 
 
-class TelegramLogsHandler(logging.Handler):
-    def __init__(self, bot: Bot, chat_id: int):
-        super().__init__()
-        self.bot = bot
-        self.chat_id = chat_id
 
-    def emit(self, record):
-        log_entry = self.format(record)
-        asyncio.create_task(self.send_log_message(log_entry))
+def start(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Здравствуйте!')
 
-    async def send_log_message(self, log_entry):
-        await self.bot.send_message(chat_id=self.chat_id, text=log_entry)
+
+def dialog_flow(update: Update, context: CallbackContext, project_id):
+    message = update.message
+    answer = detect_intent(project_id, message.from_user.id, [message.text])
+    context.bot.send_message(chat_id=message.chat_id, text=answer.fulfillment_text)
+
+
+def error_handler(update: Update, context: CallbackContext, chat_id):
+    # logger.error(f'Бот упал с ошибкой {context.error}')
+    context.bot.send_message(chat_id=chat_id, text=f'Бот упал с ошибкой {context.error}')
 
 
 def main():
@@ -30,43 +32,37 @@ def main():
     env.read_env()
     bot_token = env.str('TELEGRAM_BOT_TOKEN')
     project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
-    bot = Bot(bot_token, parse_mode=types.ParseMode.HTML)
-    dp = Dispatcher(bot)
     chat_id = env.int('ADMIN_CHAT_ID')
-
-    logger.info('Бот запущен')
+    updater = Updater(bot_token, use_context=True)
+    bot = telegram.Bot(token=bot_token)
+    logger.setLevel(logging.DEBUG)
+    # File hundler
     file_handler = RotatingFileHandler('tg_bot.log', maxBytes=100000, backupCount=3)
-    file_handler.setFormatter(logging.Formatter('%(message)s'))
+    file_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(file_handler)
-
-    telegram_handler = TelegramLogsHandler(bot, chat_id)
-    telegram_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
-    logger.addHandler(telegram_handler)
-
+    # Terminal hundler
     stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(stream_handler)
+    logger.info('Бот запущен')
 
-    async def set_default_commands(dp):
-        await dp.bot.set_my_commands(
-            [
-                types.BotCommand('start', 'Запустить бота'),
-            ]
-        )
+    dp = updater.dispatcher
 
-    @dp.message_handler(commands=['start'])
-    async def start(message: types.Message):
-        await message.answer('Здравствуйте!')
+    start_handler = CommandHandler('start', start)
+    dp.add_handler(start_handler)
 
-    @dp.errors_handler()
-    async def errors_handler(update: types.Update, exception: Exception):
-        logger.exception(f'Ошибка из телеграмм бота: {exception}')
+    echo_handler = MessageHandler(Filters.text & (~Filters.command),
+                                  lambda update, context: dialog_flow(update, context, project_id))
+    dp.add_handler(echo_handler)
+    dp = updater.dispatcher
+    dp.add_error_handler(lambda update, context: error_handler(update, context, chat_id))
 
-    @dp.message_handler()
-    async def echo(message: types.Message):
-        answer = detect_intent(project_id, message.from_user.id, [(message.text)])
-        await message.answer(answer.fulfillment_text)
+    try:
+        updater.start_polling()
+        updater.idle()
 
-    executor.start_polling(dp, skip_updates=True, on_startup=set_default_commands)
+    except Exception as error:
+        logger.exception(f'Бот упал с ошибкой: {error}')
 
 
 if __name__ == '__main__':
