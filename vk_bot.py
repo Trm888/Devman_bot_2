@@ -52,7 +52,7 @@ def main():
     logger.info('Бот запущен')
 
     telegram_handler = TelegramLogsHandler(bot, chat_id)
-    telegram_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
+    telegram_handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(telegram_handler)
 
     while True:
@@ -70,7 +70,7 @@ def main():
                         vk_api.messages.send(chat_id=chat_id, message=answer.fulfillment_text, random_id=random.randint(1, 1000))
                         vk_api.messages.send(user_id=event.user_id, message=answer.fulfillment_text, random_id=random.randint(1, 1000))
         except Exception as error:
-            logger.exception(f'Ошибка из телеграмм бота: {error}')
+            logger.exception(f'Бот упал с ошибкой: {error}')
             continue
 
 
