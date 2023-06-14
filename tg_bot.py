@@ -1,7 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-import telegram
 from environs import Env
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -9,7 +8,6 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from dialogflow_func import detect_intent
 
 logger = logging.getLogger(__name__)
-
 
 
 def start(update: Update, context: CallbackContext):
@@ -22,8 +20,7 @@ def dialog_flow(update: Update, context: CallbackContext, project_id):
     context.bot.send_message(chat_id=message.chat_id, text=answer.fulfillment_text)
 
 
-def error_handler(update: Update, context: CallbackContext, chat_id):
-    # logger.error(f'Бот упал с ошибкой {context.error}')
+def sabmit_error(update: Update, context: CallbackContext, chat_id):
     context.bot.send_message(chat_id=chat_id, text=f'Бот упал с ошибкой {context.error}')
 
 
@@ -34,13 +31,12 @@ def main():
     project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
     chat_id = env.int('ADMIN_CHAT_ID')
     updater = Updater(bot_token, use_context=True)
-    bot = telegram.Bot(token=bot_token)
     logger.setLevel(logging.DEBUG)
-    # File hundler
+
     file_handler = RotatingFileHandler('tg_bot.log', maxBytes=100000, backupCount=3)
     file_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(file_handler)
-    # Terminal hundler
+
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(logging.Formatter('level=%(levelname)s time="%(asctime)s" message="%(message)s"'))
     logger.addHandler(stream_handler)
@@ -55,14 +51,10 @@ def main():
                                   lambda update, context: dialog_flow(update, context, project_id))
     dp.add_handler(echo_handler)
     dp = updater.dispatcher
-    dp.add_error_handler(lambda update, context: error_handler(update, context, chat_id))
+    dp.add_error_handler(lambda update, context: sabmit_error(update, context, chat_id))
 
-    try:
-        updater.start_polling()
-        updater.idle()
-
-    except Exception as error:
-        logger.exception(f'Бот упал с ошибкой: {error}')
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
