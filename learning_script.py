@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 
@@ -30,14 +31,23 @@ def create_intent(project_id, display_name, training_phrases_parts, message_text
 
 
 if __name__ == '__main__':
+    default_file_path = os.path.join(os.getcwd(), 'examples_JSON_files_with_text', 'questions.json')
+    parser = argparse.ArgumentParser(description='Запуск скрипта')
+    parser.add_argument(
+        '-fp',
+        '--file_path',
+        help='Укажите путь к файлу',
+        nargs='?', default=default_file_path, type=str
+    )
+    args = parser.parse_args()
+    file_path = args.file_path
+
     env = Env()
     env.read_env()
     project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
-    file_path = os.path.join(os.getcwd(), 'examples_JSON_files_with_text', 'questions.json')
 
     with open(file_path, 'r', encoding='utf-8') as file:
-        job_intent = json.load(file)["Устройство на работу"]
-        questions = job_intent["questions"]
-        answer = [job_intent['answer']]
-
-    create_intent(project_id, 'getting-job', questions, answer)
+        for key, value in json.load(file).items():
+            questions = value["questions"]
+            answer = [value['answer']]
+            create_intent(project_id, key, questions, answer)
