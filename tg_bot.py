@@ -21,7 +21,7 @@ def dialog_flow(update: Update, context: CallbackContext, project_id):
     context.bot.send_message(chat_id=message.chat_id, text=answer.fulfillment_text)
 
 
-def sabmit_error(update: Update, context: CallbackContext, chat_id):
+def submit_error(update: Update, context: CallbackContext, chat_id):
     context.bot.send_message(chat_id=chat_id, text=f'Бот упал с ошибкой {context.error}')
 
 
