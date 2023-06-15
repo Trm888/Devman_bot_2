@@ -70,8 +70,11 @@ def main():
                     if answer.intent.is_fallback:
                         continue
                     else:
-                        vk_api.messages.send(chat_id=chat_id, message=answer.fulfillment_text, random_id=random.randint(1, 1000))
-                        vk_api.messages.send(user_id=event.user_id, message=answer.fulfillment_text, random_id=random.randint(1, 1000))
+                        vk_api.messages.send(
+                            chat_id=chat_id,
+                            message=answer.fulfillment_text,
+                            random_id=random.randint(1, 1000)
+                        )
         except Exception as error:
             logger.exception(f'Бот упал с ошибкой: {error}')
             continue
