@@ -15,7 +15,7 @@ def start(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Здравствуйте!')
 
 
-def dialog_flow(update: Update, context: CallbackContext, project_id):
+def get_answer_from_dialog_flow(update: Update, context: CallbackContext, project_id):
     message = update.message
     answer = detect_intent(project_id, message.from_user.id, [message.text])
     context.bot.send_message(chat_id=message.chat_id, text=answer.fulfillment_text)
