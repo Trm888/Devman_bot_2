@@ -5,7 +5,6 @@ def detect_intent(project_id, session_id, texts, language_code='ru-RU'):
     session_client = dialogflow.SessionsClient()
 
     session = session_client.session_path(project_id, session_id)
-    print("Session path: {}\n".format(session))
 
     for text in texts:
         text_input = dialogflow.TextInput(text=text, language_code=language_code)
