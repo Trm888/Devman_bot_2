@@ -17,7 +17,8 @@ def start(update: Update, context: CallbackContext):
 
 def get_answer_from_dialog_flow(update: Update, context: CallbackContext, project_id):
     message = update.message
-    answer = detect_intent(project_id, message.from_user.id, [message.text])
+    answer = detect_intent(project_id, message.from_user.id, message.text)
+    print(answer)
     context.bot.send_message(chat_id=message.chat_id, text=answer.fulfillment_text)
 
 
@@ -51,9 +52,9 @@ def main():
     dp.add_handler(start_handler)
 
     echo_handler = MessageHandler(Filters.text & (~Filters.command),
-                                  lambda update, context: dialog_flow(update, context, project_id))
+                                  lambda update, context: get_answer_from_dialog_flow(update, context, project_id))
     dp.add_handler(echo_handler)
-    dp.add_error_handler(lambda update, context: sabmit_error(update, context, chat_id))
+    dp.add_error_handler(lambda update, context: submit_error(update, context, chat_id))
 
     updater.start_polling()
     updater.idle()

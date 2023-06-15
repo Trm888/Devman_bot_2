@@ -58,7 +58,7 @@ def main():
             for event in longpoll.listen():
                 if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                     chat_id = event.chat_id
-                    answer = detect_intent(project_id, chat_id, [(event.text)])
+                    answer = detect_intent(project_id, chat_id, event.text)
                     if answer.intent.is_fallback:
                         continue
                     else:
