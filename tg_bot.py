@@ -53,7 +53,6 @@ def main():
     echo_handler = MessageHandler(Filters.text & (~Filters.command),
                                   lambda update, context: dialog_flow(update, context, project_id))
     dp.add_handler(echo_handler)
-    dp = updater.dispatcher
     dp.add_error_handler(lambda update, context: sabmit_error(update, context, chat_id))
 
     updater.start_polling()
