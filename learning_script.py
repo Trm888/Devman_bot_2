@@ -47,7 +47,7 @@ if __name__ == '__main__':
     project_id = env.str('GOOGLE_CLOUD_PROJECT_ID')
 
     with open(file_path, 'r', encoding='utf-8') as file:
-        for key, value in json.load(file).items():
-            questions = value["questions"]
-            answer = [value['answer']]
-            create_intent(project_id, key, questions, answer)
+        for intent, training_phrases in json.load(file).items():
+            questions = training_phrases["questions"]
+            answer = [training_phrases['answer']]
+            create_intent(project_id, intent, questions, answer)
